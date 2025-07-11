@@ -325,7 +325,7 @@ async def deepsearch_get(query: str, search_type: str = "general"):
 
 if __name__ == "__main__":
     import os
-    port = int(os.environ.get("PORT", 8080))  # Default to 8080 if PORT not set
+    port = int(os.environ.get("PORT", 10000))  # Use 10000 as a common Render default
     import uvicorn
     print(f"[DEBUG] Starting server on port {port}")
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
