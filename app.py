@@ -173,6 +173,31 @@ def root():
     print("[DEBUG] / root endpoint called")
     return {"message": "Deep Web AI Search API. Use /deepsearch endpoint."}
 
+@app.get("/policy")
+def get_policy():
+    print("[DEBUG] /policy endpoint called")
+    return {
+        "policy": (
+            "This API is for responsible, legal, and ethical use only. "
+            "Do not use for illegal, harmful, or abusive purposes. "
+            "Restricted words/queries are blocked. "
+            "By using this API, you agree to comply with all applicable laws and our terms."
+        )
+    }
+
+RESTRICTED_WORDS = [
+    "hack", "porn", "sex", "nude", "illegal", "crack", "cheat", "exploit", "terror", "violence", "kill", "murder",
+    "drugs", "weapon", "bomb", "child", "abuse", "darkweb", "deepweb", "credit card", "password", "leak", "leaks"
+]
+
+def contains_restricted_word(query):
+    q = query.lower()
+    for word in RESTRICTED_WORDS:
+        if word in q:
+            print(f"[DEBUG] Restricted word detected: {word}")
+            return word
+    return None
+
 @app.post("/deepsearch")
 async def deepsearch(request: Request):
     print("[DEBUG] /deepsearch POST endpoint called")
@@ -181,6 +206,10 @@ async def deepsearch(request: Request):
     query = data.get("query", "").strip()
     search_type = data.get("search_type", "general").lower()
     print(f"[DEBUG] Parsed query: '{query}', search_type: '{search_type}'")
+    restricted = contains_restricted_word(query)
+    if restricted:
+        print(f"[DEBUG] Query blocked due to restricted word: {restricted}")
+        return JSONResponse({"error": f"Use of restricted word '{restricted}' is not allowed."}, status_code=403)
     if not query:
         print("[DEBUG] Missing query in request")
         return JSONResponse({"error": "Missing query"}, status_code=400)
@@ -237,6 +266,10 @@ async def deepsearch(request: Request):
 @app.get("/deepsearch/{query}")
 async def deepsearch_get(query: str, search_type: str = "general"):
     print(f"[DEBUG] /deepsearch/{query} GET endpoint called with search_type: {search_type}")
+    restricted = contains_restricted_word(query)
+    if restricted:
+        print(f"[DEBUG] Query blocked due to restricted word: {restricted}")
+        return JSONResponse({"error": f"Use of restricted word '{restricted}' is not allowed."}, status_code=403)
     if not query:
         print("[DEBUG] Missing query in path")
         return JSONResponse({"error": "Missing query"}, status_code=400)
@@ -289,3 +322,10 @@ async def deepsearch_get(query: str, search_type: str = "general"):
         "sources": sources,
         "summary": summary
     }
+
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8080))  # Default to 8080 if PORT not set
+    import uvicorn
+    print(f"[DEBUG] Starting server on port {port}")
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=True)
